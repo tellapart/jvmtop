@@ -93,6 +93,7 @@ public class JvmTop
     parser.accepts("profile", "start CPU profiling at the specified jvm");
     parser.accepts("sysinfo", "outputs diagnostic information");
     parser.accepts("verbose", "verbose mode");
+    parser.accepts("noFilterSunMethods", "Don't filter out core java methods from the stack.");
     parser.accepts("threadlimit",
         "sets the number of displayed threads in detail mode")
         .withRequiredArg().ofType(Integer.class);
@@ -131,7 +132,7 @@ public class JvmTop
 
     Integer pid = null;
 
-    Integer width = null;
+    Integer width = 200;
 
     double delay = 1.0;
 
@@ -142,6 +143,8 @@ public class JvmTop
     Integer threadlimit = null;
 
     boolean threadLimitEnabled = true;
+
+    boolean filterSunMethods = true;
 
     if (a.hasArgument("delay"))
     {
@@ -190,6 +193,11 @@ public class JvmTop
       logger.fine("Verbosity mode.");
     }
 
+    if (a.has("noFilterSunMethods")) 
+    {
+      filterSunMethods = false;
+    }
+
     if (sysInfoOption)
     {
       outputSystemProps();
@@ -207,7 +215,7 @@ public class JvmTop
       {
         if (profileMode)
         {
-          jvmTop.run(new VMProfileView(pid, width));
+          jvmTop.run(new VMProfileView(pid, width, filterSunMethods));
         }
         else
         {

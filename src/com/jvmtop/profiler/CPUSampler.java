@@ -48,8 +48,9 @@ public class CPUSampler {
 
   private long beginCPUTime_ = 0;
 
-  private AtomicLong totalThreadCPUTime_ = new AtomicLong(
-      0);
+  private AtomicLong totalThreadCPUTime_ = new AtomicLong(0);
+
+  private boolean filterSunMethods_;
 
 
   //TODO: these exception list should be expanded to the most common 3rd-party library packages
@@ -63,8 +64,7 @@ public class CPUSampler {
 
   private ConcurrentMap<Long, Long> threadCPUTime = new ConcurrentHashMap<Long, Long>();
 
-  private AtomicLong updateCount_ = new AtomicLong(
-      0);
+  private AtomicLong updateCount_ = new AtomicLong(0);
 
   private VMInfo vmInfo_;
 
@@ -72,11 +72,12 @@ public class CPUSampler {
    * @param threadMxBean
    * @throws Exception
    */
-  public CPUSampler(VMInfo vmInfo) throws Exception {
+  public CPUSampler(VMInfo vmInfo, boolean filterSunMethods) throws Exception {
     super();
     threadMxBean_ = vmInfo.getThreadMXBean();
     beginCPUTime_ = vmInfo.getProxyClient().getProcessCpuTime();
     vmInfo_ = vmInfo;
+    filterSunMethods_ = filterSunMethods;
   }
 
   public List<MethodStats> getTop(int limit) {
@@ -98,15 +99,13 @@ public class CPUSampler {
         tCPUTime = 0L;
       } else {
         Long deltaCpuTime = (cpuTime - tCPUTime);
-
-        if (ti.getStackTrace().length > 0
-            && ti.getThreadState() == State.RUNNABLE
-            ) {
+        
+        if (ti.getThreadState() == State.RUNNABLE) {
           for (StackTraceElement stElement : ti.getStackTrace()) {
             if (isReallySleeping(stElement)) {
               break;
             }
-            if (isFiltered(stElement)) {
+            if (filterSunMethods_ && isFiltered(stElement)) {
               continue;
             }
             String key = stElement.getClassName() + "."
