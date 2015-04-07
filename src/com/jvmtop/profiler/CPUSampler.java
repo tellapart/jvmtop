@@ -103,6 +103,9 @@ public class CPUSampler {
             && ti.getThreadState() == State.RUNNABLE
             ) {
           for (StackTraceElement stElement : ti.getStackTrace()) {
+            if (isReallySleeping(stElement)) {
+              break;
+            }
             if (isFiltered(stElement)) {
               continue;
             }
@@ -126,6 +129,11 @@ public class CPUSampler {
 
   public Long getUpdateCount() {
     return updateCount_.get();
+  }
+
+  private boolean isReallySleeping(StackTraceElement se) {
+    return se.getClassName().equals("sun.nio.ch.EPollArrayWrapper") &&
+          se.getMethodName().equals("epollWait");
   }
 
   public boolean isFiltered(StackTraceElement se) {
